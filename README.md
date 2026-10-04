@@ -38,7 +38,7 @@ Aplikasi web memiliki **Main Headbar** dengan 3 tab navigasi:
 ├── config.example.js         # Template konfigurasi web
 ├── env.example               # Contoh environment variable untuk CLI loader
 ├── index.html                # Aplikasi web (Dashboard, Explorer, Loader)
-├── requirements.txt          # Dependensi Python untuk loader & parser
+├── requirements-cli.txt      # Dependensi Python untuk loader & parser terminal
 ├── vercel.json               # Konfigurasi deployment Vercel
 ├── wa_parser.py              # Parser chat WhatsApp (Android/iOS, multi-format)
 ├── wa_loader.py              # Loader data ke database Supabase & Google Drive

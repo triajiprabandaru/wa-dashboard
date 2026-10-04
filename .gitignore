@@ -9,7 +9,7 @@ google_token.json
 *.jsonl
 *.zip
 *.txt
-!requirements.txt
+!requirements-cli.txt
 
 # Python cache & virtualenvs
 __pycache__/
