@@ -1,0 +1,32 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+google_client.json
+google_token.json
+
+# Chat data & exports (sensitive personal/business chats)
+*.jsonl
+*.zip
+*.txt
+!requirements.txt
+
+# Python cache & virtualenvs
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+
+# Vercel
+.vercel/
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/

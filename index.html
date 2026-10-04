@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WhatsApp Project Hub & Explorer</title>
+<style>
+:root {
+  --bg: #f6f7f9;
+  --pn: #ffffff;
+  --tx: #1b2430;
+  --mu: #6b7684;
+  --ln: #e3e7ec;
+  --ac: #0f766e;
+  --ac-hover: #0d645e;
+  --ac-light: #e6f4f2;
+  --hl: #ffe98a;
+  --badge-green: #dcfce7;
+  --badge-green-tx: #15803d;
+  --badge-amber: #fef3c7;
+  --badge-amber-tx: #b45309;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1318;
+    --pn: #171c23;
+    --tx: #e6e9ee;
+    --mu: #8a94a3;
+    --ln: #262d37;
+    --ac: #2dd4bf;
+    --ac-hover: #14b8a6;
+    --ac-light: #132e2c;
+    --hl: #6b5a00;
+    --badge-green: #064e3b;
+    --badge-green-tx: #6ee7b7;
+    --badge-amber: #78350f;
+    --badge-amber-tx: #fde68a;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--tx); }
+[hidden] { display: none !important; }
+
+/* Form inputs & buttons */
+input, select, button, textarea {
+  font: inherit; color: inherit; background: var(--pn);
+  border: 1px solid var(--ln); border-radius: 8px; padding: 7px 11px;
+}
+button { cursor: pointer; transition: all 0.15s ease; }
+button:hover { border-color: var(--ac); }
+.btn-primary { background: var(--ac); color: #fff; border: 1px solid var(--ac); font-weight: 500; }
+.btn-primary:hover { background: var(--ac-hover); border-color: var(--ac-hover); color: #fff; }
+.btn-secondary { background: var(--pn); color: var(--tx); border: 1px solid var(--ln); font-weight: 500; }
+.btn-secondary:hover { background: var(--ac-light); border-color: var(--ac); }
+a { color: var(--ac); word-break: break-all; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Main Headbar */
+.main-headbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--pn); border-bottom: 1px solid var(--ln);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.headbar-inner {
+  max-width: 1040px; margin: 0 auto; padding: 0 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; gap: 12px;
+}
+.brand {
+  display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px;
+  letter-spacing: -0.3px; color: var(--tx); white-space: nowrap;
+}
+.brand-badge {
+  font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px;
+  background: var(--ac-light); color: var(--ac);
+}
+.main-tabs {
+  display: flex; gap: 4px; align-items: center; height: 100%;
+}
+.main-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 100%; padding: 0 14px; border: 0; border-radius: 0;
+  background: transparent; color: var(--mu); font-weight: 500; font-size: 13.5px;
+  border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.15s ease;
+}
+.main-tab:hover { color: var(--tx); background: transparent; }
+.main-tab.active {
+  color: var(--ac); border-bottom-color: var(--ac); font-weight: 600;
+}
+.user-menu {
+  display: flex; align-items: center; gap: 10px; font-size: 12.5px;
+}
+.user-email { color: var(--mu); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Container */
+.container { max-width: 1040px; margin: 0 auto; padding: 18px 14px 60px; }
+
+/* Card components */
+.panel {
+  background: var(--pn); border: 1px solid var(--ln); border-radius: 12px;
+  padding: 20px; margin-bottom: 20px;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--ln);
+}
+.panel-title { margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+/* Explorer specific styles */
+.top {
+  position: sticky; top: 56px; z-index: 10; background: var(--pn);
+  border-bottom: 1px solid var(--ln); padding: 10px 14px;
+}
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; max-width: 900px; margin: 0 auto 8px; }
+.row:last-child { margin-bottom: 0; }
+.grow { flex: 1; min-width: 160px; }
+.tab { border: 0; background: none; padding: 6px 6px; color: var(--mu); border-bottom: 2px solid transparent; border-radius: 0; }
+.tab.on { color: var(--tx); border-color: var(--ac); font-weight: 600; }
+.wrap { max-width: 900px; margin: 0 auto; padding: 14px 14px 60px; }
+.info { color: var(--mu); font-size: 13px; margin: 4px 0 10px; }
+.day { position: sticky; top: var(--h, 160px); text-align: center; margin: 14px 0 8px; z-index: 2; }
+.day span { background: var(--bg); color: var(--mu); font-size: 12px; padding: 3px 12px; border: 1px solid var(--ln); border-radius: 99px; }
+.msg { background: var(--pn); border: 1px solid var(--ln); border-radius: 10px; padding: 10px 14px; margin: 8px 0; }
+.msg.focus { outline: 2px solid var(--ac); }
+.hd { display: flex; gap: 8px; align-items: baseline; font-size: 12px; color: var(--mu); }
+.hd b { font-size: 13px; }
+.hd .ctx { margin-left: auto; border: 0; background: none; padding: 0 4px; color: var(--mu); font-size: 12px; }
+.bd { white-space: pre-wrap; word-wrap: break-word; margin-top: 4px; }
+.del { color: var(--mu); font-style: italic; }
+.sys { text-align: center; color: var(--mu); font-size: 12px; margin: 8px 0; }
+.att { display: block; margin: 8px 0 0; text-align: left; max-width: 100%; }
+.att i { color: var(--mu); }
+.th { display: block; max-width: 260px; max-height: 220px; border-radius: 8px; margin-top: 8px; cursor: zoom-in; background: var(--ln); min-height: 40px; }
+mark { background: var(--hl); color: inherit; border-radius: 3px; }
+.card { max-width: 380px; margin: 15vh auto; background: var(--pn); border: 1px solid var(--ln); border-radius: 14px; padding: 26px; display: grid; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.more { display: block; margin: 20px auto; }
+.f { display: flex; gap: 10px; align-items: center; background: var(--pn); border: 1px solid var(--ln); border-radius: 10px; padding: 10px 14px; margin: 8px 0; }
+.f .n { flex: 1; word-break: break-all; }
+.f small { color: var(--mu); }
+
+/* Dashboard in progress view */
+.in-progress-hero {
+  text-align: center; padding: 36px 20px; background: var(--pn);
+  border: 1px solid var(--ln); border-radius: 14px; margin-bottom: 24px;
+}
+.in-progress-icon { font-size: 48px; margin-bottom: 12px; }
+.in-progress-badge {
+  display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px;
+  border-radius: 99px; background: var(--badge-amber); color: var(--badge-amber-tx);
+  letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px;
+}
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.kpi-card { background: var(--pn); border: 1px solid var(--ln); border-radius: 12px; padding: 16px; }
+.kpi-title { font-size: 12.5px; color: var(--mu); font-weight: 500; margin-bottom: 6px; }
+.kpi-val { font-size: 26px; font-weight: 700; color: var(--tx); }
+.kpi-sub { font-size: 11.5px; color: var(--mu); margin-top: 4px; }
+
+/* Loader view */
+.dropzone {
+  border: 2px dashed var(--ln); border-radius: 12px; padding: 32px 20px;
+  text-align: center; background: var(--bg); cursor: pointer; transition: all 0.2s ease;
+}
+.dropzone:hover, .dropzone.dragover { border-color: var(--ac); background: var(--ac-light); }
+.dropzone-icon { font-size: 38px; margin-bottom: 8px; }
+.folder-details {
+  background: var(--bg); border: 1px solid var(--ln); border-radius: 10px;
+  padding: 14px; margin-top: 14px; display: grid; gap: 8px; font-size: 13px;
+}
+.badge-count {
+  display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11.5px; font-weight: 600;
+  background: var(--badge-green); color: var(--badge-green-tx);
+}
+.badge-warn {
+  display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11.5px; font-weight: 600;
+  background: var(--badge-amber); color: var(--badge-amber-tx);
+}
+
+/* History table */
+.table-wrap { overflow-x: auto; margin-top: 12px; }
+table.history-table {
+  width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;
+}
+table.history-table th {
+  background: var(--bg); padding: 10px 12px; font-weight: 600; color: var(--mu);
+  border-bottom: 1px solid var(--ln); white-space: nowrap;
+}
+table.history-table td {
+  padding: 11px 12px; border-bottom: 1px solid var(--ln); vertical-align: middle;
+}
+table.history-table tr:hover td { background: rgba(0,0,0,0.015); }
+
+/* Terminal code snippet */
+pre.cmd-box {
+  background: var(--bg); border: 1px solid var(--ln); border-radius: 8px;
+  padding: 12px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12.5px; overflow-x: auto; margin: 10px 0; color: var(--tx);
+}
+</style>
+</head>
+<body>
+
+<!-- Login Modal -->
+<div id="login" hidden>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:24px;">💬</span>
+      <h2 style="margin:0;font-size:18px;">WA Dashboard & Explorer</h2>
+    </div>
+    <p class="info" style="margin:0">Masuk dengan email yang sudah diundang. Tautan login ajaib akan dikirimkan ke kotak masuk Anda.</p>
+    <input id="em" type="email" placeholder="nama@email.com" autocomplete="email">
+    <button id="go" class="btn-primary">Kirim Tautan Login</button>
+    <div id="lm" class="info"></div>
+  </div>
+</div>
+
+<!-- Main Authenticated App -->
+<div id="app" hidden>
+  
+  <!-- Main Headbar with 3 Tabs -->
+  <header class="main-headbar">
+    <div class="headbar-inner">
+      <div class="brand">
+        <span>💬</span>
+        <span>WA Dashboard</span>
+        <span class="brand-badge">AMG Hub</span>
+      </div>
+
+      <nav class="main-tabs" id="main-nav">
+        <button class="main-tab" data-nav="dashboard">
+          <span>📊</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="main-tab active" data-nav="explorer">
+          <span>🔍</span>
+          <span>Explorer</span>
+        </button>
+        <button class="main-tab" data-nav="loader">
+          <span>📥</span>
+          <span>Loader</span>
+        </button>
+      </nav>
+
+      <div class="user-menu">
+        <span id="user-email" class="user-email"></span>
+        <button id="out" class="btn-secondary" style="padding:4px 10px;font-size:12px;">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- VIEW 1: DASHBOARD (IN PROGRESS) -->
+  <main id="view-dashboard" class="container" hidden>
+    <div class="in-progress-hero">
+      <div class="in-progress-icon">🚧</div>
+      <div class="in-progress-badge">In Progress</div>
+      <h2 style="margin:0 0 8px 0;font-size:22px;">Dashboard Analitik & Ringkasan Obrolan</h2>
+      <p style="margin:0 auto;max-width:580px;color:var(--mu);font-size:14px;">
+        Halaman dashboard sedang dalam tahap pengembangan intensif. Fitur analitik aktivitas obrolan tim, ringkasan topik penting, serta grafik keterlibatan peserta akan segera hadir di sini.
+      </p>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">📁 Total Proyek Aktif</div>
+        <div class="kpi-val" id="dash-total-projects">-</div>
+        <div class="kpi-sub">Proyek terdaftar di workspace</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">👥 Total Grup Terhubung</div>
+        <div class="kpi-val" id="dash-total-groups">-</div>
+        <div class="kpi-sub">Grup WhatsApp dalam database</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">💬 Estimasi Pesan</div>
+        <div class="kpi-val" id="dash-total-messages">-</div>
+        <div class="kpi-sub">Pesan tersimpan di Supabase</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">☁️ Penyimpanan Media</div>
+        <div class="kpi-val">Google Drive</div>
+        <div class="kpi-sub">Foto, dokumen & video terunggah</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">🗺️ Roadmap Fitur Dashboard</h3>
+        <span class="brand-badge">Rencana Rilis</span>
+      </div>
+      <ul style="margin:0;padding-left:20px;color:var(--mu);line-height:1.8;">
+        <li><strong>Grafik Tren Aktivitas Obrolan:</strong> Visualisasi volume chat harian, mingguan, dan jam-jam sibuk tim.</li>
+        <li><strong>Top Kontributor & Pengirim:</strong> Daftar anggota tim paling aktif dalam diskusi proyek.</li>
+        <li><strong>Pencarian AI & Rangkuman:</strong> Rangkuman otomatis keputusan rapat dan tindak lanjut lapangan dari chat.</li>
+        <li><strong>Manajemen Berkas Cepat:</strong> Pratinjau langsung dokumen teknik (PDF, gambar proyek) yang baru dikirim.</li>
+      </ul>
+    </div>
+  </main>
+
+  <!-- VIEW 2: EXPLORER (EXISTING ON PORT 8000) -->
+  <main id="view-explorer">
+    <div class="top" id="top">
+      <div class="row">
+        <select id="pj" class="grow" title="Pilih Proyek"></select>
+        <select id="gr" class="grow" title="Pilih Grup WhatsApp"></select>
+      </div>
+      <div class="row">
+        <input id="q" class="grow" type="search" placeholder="Cari pesan atau nama file…" autocomplete="off">
+        <button class="tab on" data-t="chat">Percakapan</button>
+        <button class="tab" data-t="files">Berkas</button>
+      </div>
+      <div class="row">
+        <select id="sd" title="Filter Pengirim"></select>
+        <input id="d1" type="date" title="Dari tanggal">
+        <input id="d2" type="date" title="Sampai tanggal">
+        <select id="kd" hidden>
+          <option value="">Semua jenis</option>
+          <option value="image">Foto</option>
+          <option value="document">Dokumen</option>
+          <option value="video">Video</option>
+          <option value="audio">Audio</option>
+        </select>
+        <label id="o1"><input id="md" type="checkbox"> media saja</label>
+        <label id="o2"><input id="sy" type="checkbox"> pesan sistem</label>
+        <button id="ord">Terbaru dulu</button>
+      </div>
+    </div>
+    <div class="wrap">
+      <div id="inf" class="info"></div>
+      <div id="list"></div>
+      <button id="more" class="more btn-secondary" hidden>Muat lebih banyak</button>
+    </div>
+  </main>
+
+  <!-- VIEW 3: LOADER (FOLDER PICKER, UPDATE CHAT, LOG HISTORY) -->
+  <main id="view-loader" class="container" hidden>
+    
+    <!-- Upload / Update Card -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">📥 Update & Unggah Chat WhatsApp</h3>
+        <span class="brand-badge">Idempotent Loader</span>
+      </div>
+
+      <p style="margin:0 0 16px 0;color:var(--mu);font-size:13.5px;">
+        Pilih folder hasil ekspor obrolan WhatsApp dari komputer Anda. Sistem akan mendeteksi file teks chat dan file media pendukung secara otomatis.
+      </p>
+
+      <!-- Folder dropzone / picker -->
+      <input type="file" id="folder-input" webkitdirectory directory multiple hidden>
+      <input type="file" id="file-input" accept=".txt,.zip,.jsonl" hidden>
+
+      <div class="dropzone" id="dropzone-area">
+        <div class="dropzone-icon">📁</div>
+        <div style="font-weight:600;font-size:15px;margin-bottom:4px;">Klik untuk Memilih Folder Chat WhatsApp</div>
+        <div style="color:var(--mu);font-size:12.5px;margin-bottom:12px;">Folder ekspor yang berisi <code>_chat.txt</code> beserta foto/dokumen media</div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="btn-primary" id="btn-pick-folder">📂 Pilih Folder Export</button>
+          <button type="button" class="btn-secondary" id="btn-pick-file">📄 Atau Pilih File .txt / .zip</button>
+        </div>
+      </div>
+
+      <!-- Selected Folder Status & Options -->
+      <div id="loader-selected-box" class="folder-details" hidden>
+        <div><strong>Folder Terpilih:</strong> <span id="sel-folder-name" style="font-family:monospace;">-</span></div>
+        <div><strong>Status File Teks:</strong> <span id="sel-chat-status">Menunggu pemeriksaan...</span></div>
+        <div><strong>Berkas Media:</strong> <span id="sel-media-status">0 berkas media</span></div>
+        
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px;padding-top:10px;border-top:1px solid var(--ln);">
+          <div style="flex:1;min-width:180px;">
+            <label style="display:block;font-size:12px;color:var(--mu);margin-bottom:4px;">Proyek Tujuan</label>
+            <select id="loader-proj-select" style="width:100%;"></select>
+          </div>
+          <div style="margin-top:18px;">
+            <button id="btn-start-update" class="btn-primary" style="padding:9px 18px;font-size:13.5px;">
+              🚀 Mulai Update Chat
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Execution Log Box -->
+      <div id="loader-log-container" style="margin-top:16px;" hidden>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:12.5px;font-weight:600;color:var(--mu);">Status Eksekusi:</span>
+          <span id="loader-status-badge" class="badge-count">Siap</span>
+        </div>
+        <pre id="loader-log-box" class="cmd-box" style="max-height:160px;margin:0;"></pre>
+      </div>
+
+      <!-- CLI Guide Assistant -->
+      <div style="margin-top:18px;background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="font-weight:600;font-size:13px;">💡 Jalankan via Terminal (Untuk Upload Lengkap Media ke Drive)</span>
+          <button id="btn-copy-cmd" class="btn-secondary" style="font-size:12px;padding:4px 10px;">📋 Salin Perintah</button>
+        </div>
+        <p style="margin:6px 0 8px 0;font-size:12px;color:var(--mu);">
+          Upload media bergiga-byte langsung diproses dengan cepat & aman tanpa batas limit browser melalui perintah Python berikut:
+        </p>
+        <pre class="cmd-box" id="cli-cmd-display" style="margin:0;">python wa_parser.py "WhatsApp Chat dengan PROYEK" --out chat.jsonl
+python wa_loader.py load chat.jsonl --project "AMG" --media-dir "WhatsApp Chat dengan PROYEK" --drive</pre>
+      </div>
+    </div>
+
+    <!-- History Card -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">📋 Riwayat Pengunggahan & Pembaruan</h3>
+        <button id="btn-refresh-history" class="btn-secondary" style="font-size:12px;padding:5px 12px;">
+          🔄 Segarkan Riwayat
+        </button>
+      </div>
+
+      <div id="history-loading" class="info">Memuat riwayat pengunggahan dari Supabase...</div>
+
+      <div class="table-wrap">
+        <table class="history-table" id="history-table" hidden>
+          <thead>
+            <tr>
+              <th>Waktu Unggah</th>
+              <th>Grup WhatsApp</th>
+              <th>Berkas Sumber</th>
+              <th>Pesan Terupdate</th>
+              <th>Total di Berkas</th>
+              <th>Rentang Obrolan</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="history-rows"></tbody>
+        </table>
+      </div>
+
+      <div id="history-empty" class="info" style="text-align:center;padding:24px 0;" hidden>
+        Belum ada riwayat pengunggahan chat yang tercatat di database.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const sb = supabase.createClient(WA_CONFIG.url, WA_CONFIG.key);
+const TZ = "Asia/Jakarta", PAGE = 100;
+const tf = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }),
+      df = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+      dfShort = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      dk = d => new Date(d).toLocaleDateString("en-CA", { timeZone: TZ }),
+      hue = n => Math.abs([...n].reduce((a,c) => a * 31 + c.charCodeAt(0) | 0, 7)) % 360,
+      IC = { image: "🖼️", video: "🎬", audio: "🎧", document: "📄", sticker: "🏷️", other: "📎" };
+
+const S = {
+  mainNav: "explorer",
+  tab: "chat",
+  off: 0,
+  asc: false,
+  groups: [],
+  projects: [],
+  day: null,
+  focus: null,
+  on: false,
+  currentUser: null,
+  selectedFiles: [],
+  selectedFolder: null,
+  chatTextContent: null,
+  chatFileName: null
+};
+
+// --- AUTH & BOOTSTRAP ---
+$("#go").onclick = async () => {
+  const email = $("#em").value.trim();
+  if (!email) return;
+  $("#lm").textContent = "Mengirimkan email login...";
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: location.origin + location.pathname
+    }
+  });
+  $("#lm").textContent = error ? "Gagal: " + error.message + " (email harus sudah diundang di Supabase)" : "Cek email Anda dan klik tautan untuk masuk.";
+};
+
+$("#out").onclick = () => sb.auth.signOut();
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  const isLoggedIn = !!session;
+  if (isLoggedIn === S.on && S.on) return;
+  S.on = isLoggedIn;
+  S.currentUser = session?.user || null;
+  $("#login").hidden = S.on;
+  $("#app").hidden = !S.on;
+  
+  if (S.on) {
+    $("#user-email").textContent = S.currentUser?.email || "Pengguna";
+    await projects();
+    await loadHistory();
+    updateDashboardKpis();
+  }
+}
+sb.auth.onAuthStateChange(() => boot());
+boot();
+
+// --- MAIN HEADBAR TABS SWITCHER ---
+$$(".main-tab").forEach(btn => {
+  btn.onclick = () => {
+    const nav = btn.dataset.nav;
+    switchMainNav(nav);
+  };
+});
+
+function switchMainNav(nav) {
+  S.mainNav = nav;
+  $$(".main-tab").forEach(b => b.classList.toggle("active", b.dataset.nav === nav));
+  $("#view-dashboard").hidden = (nav !== "dashboard");
+  $("#view-explorer").hidden = (nav !== "explorer");
+  $("#view-loader").hidden = (nav !== "loader");
+
+  if (nav === "dashboard") {
+    updateDashboardKpis();
+  } else if (nav === "loader") {
+    loadHistory();
+    updateLoaderProjectSelect();
+  } else if (nav === "explorer") {
+    sh();
+  }
+}
+
+// --- DASHBOARD KPIS ---
+async function updateDashboardKpis() {
+  $("#dash-total-projects").textContent = S.projects.length || "0";
+  const totalGroups = S.projects.reduce((acc, p) => acc + (p.project_groups?.length || 0), 0);
+  $("#dash-total-groups").textContent = totalGroups || "0";
+  
+  // Total messages count from Supabase
+  try {
+    const { count, error } = await sb.from("messages").select("id", { count: "estimated", head: true });
+    if (!error && count !== null) {
+      $("#dash-total-messages").textContent = Number(count).toLocaleString("id-ID");
+    } else {
+      $("#dash-total-messages").textContent = "Tersedia";
+    }
+  } catch (err) {
+    console.error("Gagal menghitung pesan:", err);
+    $("#dash-total-messages").textContent = "-";
+  }
+}
+
+// --- PROJECTS & GROUPS (EXPLORER) ---
+async function projects() {
+  const { data, error } = await sb.from("projects").select("id,name,project_groups(groups(id,name))").order("name");
+  if (error || !data.length) {
+    $("#inf").textContent = error ? error.message : "Belum ada project yang bisa Anda akses.";
+    return;
+  }
+  S.projects = data;
+  $("#pj").innerHTML = data.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  const { data: al } = await sb.from("participant_aliases").select("alias").order("alias");
+  $("#sd").innerHTML = '<option value="">Semua pengirim</option>' + (al || []).map(a => `<option>${esc(a.alias)}</option>`).join("");
+  pick();
+}
+
+function pick() {
+  const p = S.projects.find(x => x.id === $("#pj").value);
+  S.groups = p ? p.project_groups.map(x => x.groups).filter(Boolean) : [];
+  $("#gr").innerHTML = `<option value="">Semua grup (${S.groups.length})</option>` + S.groups.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join("");
+  load();
+}
+
+function build(gids, files) {
+  const sel = files
+    ? "id,group_id,ts,sender_alias,attachments!inner(id,filename,media_kind,storage_path)"
+    : "id,group_id,ts,sender_alias,kind,body,edited,attachments(id,filename,media_kind,storage_path)";
+  let q = sb.from("messages").select(sel, { count: "exact" }).in("group_id", gids).order("ts", { ascending: S.asc }).order("seq", { ascending: S.asc }).range(S.off, S.off + PAGE - 1);
+  const t = $("#q").value.trim().replace(/[\\%_]/g, "\\$&"), sd = $("#sd").value, d1 = $("#d1").value, d2 = $("#d2").value;
+  if (sd) q = q.eq("sender_alias", sd);
+  if (d1) q = q.gte("ts", d1 + "T00:00:00+07:00");
+  if (d2) q = q.lte("ts", d2 + "T23:59:59+07:00");
+  if (files) {
+    if (t) q = q.ilike("attachments.filename", `%${t}%`);
+    if ($("#kd").value) q = q.eq("attachments.media_kind", $("#kd").value);
+  } else {
+    if (t) q = q.ilike("body", `%${t}%`);
+    if (!$("#sy").checked) q = q.neq("kind", "system");
+    if ($("#md").checked) q = q.eq("kind", "media");
+  }
+  return q;
+}
+
+async function load(reset = true) {
+  if (reset) { S.off = 0; S.day = null; $("#list").innerHTML = ""; }
+  const g = $("#gr").value, gids = g ? [g] : S.groups.map(x => x.id);
+  if (!gids.length) return;
+  const files = S.tab === "files";
+  $("#inf").textContent = "Memuat…";
+  const { data, error, count } = await build(gids, files);
+  if (error) { $("#inf").textContent = "Error: " + error.message; return; }
+  $("#inf").textContent = `${count} ${files ? "berkas" : "pesan"} cocok`;
+  const names = Object.fromEntries(S.groups.map(x => [x.id, x.name])), multi = !g && S.groups.length > 1, q = $("#q").value.trim();
+  $("#list").insertAdjacentHTML("beforeend", data.map(m => {
+    let h = "";
+    const d = dk(m.ts);
+    if (!files && d !== S.day) { S.day = d; h = `<div class="day"><span>${df.format(new Date(m.ts))}</span></div>`; }
+    return h + (files ? m.attachments.map(a => fileRow(m, a, multi && names[m.group_id])).join("") : msg(m, q, multi && names[m.group_id]));
+  }).join(""));
+  S.off += data.length;
+  $("#more").hidden = data.length < PAGE;
+  imgs();
+  if (S.focus) {
+    const e = document.querySelector(`[data-id="${S.focus}"]`);
+    if (e) { e.classList.add("focus"); e.scrollIntoView({ block: "center" }); }
+    S.focus = null;
+  }
+}
+
+function hl(s, q) {
+  if (!q) return s;
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  return s.split(/(<[^>]+>)/).map((p, i) => i % 2 ? p : p.replace(re, m => `<mark>${m}</mark>`)).join("");
+}
+
+function msg(m, q, grp) {
+  if (m.kind === "system") return `<div class="sys">${esc(m.body)}</div>`;
+  const n = m.sender_alias || "?",
+        body = m.kind === "deleted" ? '<span class="del">🚫 pesan dihapus</span>' : hl(esc(m.body).replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`), q);
+  const at = (m.attachments || []).map(a => a.media_kind === "image" && a.storage_path
+    ? `<img class="th" data-p="${esc(a.storage_path)}" alt="${esc(a.filename)}">`
+    : `<button class="att" data-p="${esc(a.storage_path || "")}">${IC[a.media_kind] || "📎"} ${esc(a.filename || "media (tanpa nama)")}${a.storage_path ? "" : " <i>· file tidak tersimpan</i>"}</button>`
+  ).join("");
+  return `<div class="msg" data-id="${m.id}"><div class="hd"><b style="color:hsl(${hue(n)} 55% 45%)">${esc(n)}</b><span>${tf.format(new Date(m.ts))}${m.edited ? " · diedit" : ""}${grp ? " · " + esc(grp) : ""}</span>
+  <button class="ctx" data-g="${m.group_id}" data-t="${m.ts}" data-id="${m.id}" title="Lihat di percakapan">konteks ↗</button></div>
+  ${m.body || m.kind === "deleted" ? `<div class="bd">${body}</div>` : ""}${at}</div>`;
+}
+
+function fileRow(m, a, grp) {
+  return `<div class="f"><span>${IC[a.media_kind] || "📎"}</span><div class="n">${esc(a.filename)}<br><small>${esc(m.sender_alias || "")} · ${df.format(new Date(m.ts))}${grp ? " · " + esc(grp) : ""}</small></div>
+  ${a.storage_path ? `<button class="att" data-p="${esc(a.storage_path)}">Buka</button>` : "<small>tidak tersimpan</small>"}</div>`;
+}
+
+async function imgs() {
+  const el = [...document.querySelectorAll("img.th:not([src])")];
+  if (!el.length) return;
+  el.forEach(e => {
+    if (e.dataset.p) e.src = `https://drive.google.com/thumbnail?id=${encodeURIComponent(e.dataset.p)}&sz=w480-h480`;
+  });
+}
+
+$("#list").onclick = async e => {
+  const t = e.target;
+  if (t.matches("img.th,button.att") && t.dataset.p) {
+    window.open(`https://drive.google.com/file/d/${t.dataset.p}/view`, "_blank");
+  }
+  if (t.matches(".ctx")) {
+    S.tab = "chat";
+    document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.t === "chat"));
+    $("#gr").value = t.dataset.g;
+    $("#q").value = "";
+    $("#sd").value = "";
+    $("#md").checked = false;
+    $("#d1").value = $("#d2").value = dk(t.dataset.t);
+    S.asc = true;
+    $("#ord").textContent = "Terlama dulu";
+    S.focus = t.dataset.id;
+    ui();
+    load();
+  }
+};
+
+function ui() {
+  const f = S.tab === "files";
+  $("#kd").hidden = !f;
+  $("#o1").hidden = $("#o2").hidden = f;
+}
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => {
+  S.tab = b.dataset.t;
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
+  ui();
+  load();
+});
+$("#pj").onchange = pick;
+["gr", "sd", "d1", "d2", "kd", "md", "sy"].forEach(i => $("#" + i).onchange = () => load());
+$("#ord").onclick = () => {
+  S.asc = !S.asc;
+  $("#ord").textContent = S.asc ? "Terlama dulu" : "Terbaru dulu";
+  load();
+};
+$("#more").onclick = () => load(false);
+let tm;
+$("#q").oninput = () => { clearTimeout(tm); tm = setTimeout(() => load(), 300); };
+const sh = () => {
+  const topElem = $("#top");
+  if (topElem && !$("#view-explorer").hidden) {
+    document.documentElement.style.setProperty("--h", (topElem.offsetHeight + 56) + "px");
+  }
+};
+addEventListener("resize", sh);
+new ResizeObserver(sh).observe($("#top"));
+ui();
+
+// --- LOADER TAB LOGIC ---
+function updateLoaderProjectSelect() {
+  const select = $("#loader-proj-select");
+  if (!select) return;
+  select.innerHTML = S.projects.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
+}
+
+// Folder dropzone interactions
+const dropzone = $("#dropzone-area");
+const folderInput = $("#folder-input");
+const fileInput = $("#file-input");
+
+$("#btn-pick-folder").onclick = e => { e.stopPropagation(); folderInput.click(); };
+$("#btn-pick-file").onclick = e => { e.stopPropagation(); fileInput.click(); };
+dropzone.onclick = () => folderInput.click();
+
+dropzone.ondragover = e => { e.preventDefault(); dropzone.classList.add("dragover"); };
+dropzone.ondragleave = () => dropzone.classList.remove("dragover");
+dropzone.ondrop = e => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  if (e.dataTransfer.files?.length) {
+    handleSelectedFiles([...e.dataTransfer.files]);
+  }
+};
+
+folderInput.onchange = () => {
+  if (folderInput.files?.length) handleSelectedFiles([...folderInput.files]);
+};
+fileInput.onchange = () => {
+  if (fileInput.files?.length) handleSelectedFiles([...fileInput.files]);
+};
+
+async function handleSelectedFiles(files) {
+  S.selectedFiles = files;
+  $("#loader-selected-box").hidden = false;
+  
+  // Find folder name if any
+  const firstPath = files[0].webkitRelativePath || files[0].name;
+  const folderName = firstPath.includes("/") ? firstPath.split("/")[0] : "(File Terpilih)";
+  S.selectedFolder = folderName;
+  $("#sel-folder-name").textContent = folderName;
+
+  // Look for text file
+  const chatFile = files.find(f => f.name.endsWith(".txt") || f.name.endsWith(".jsonl"));
+  const mediaFiles = files.filter(f => !f.name.endsWith(".txt") && !f.name.endsWith(".jsonl"));
+
+  if (chatFile) {
+    S.chatFileName = chatFile.name;
+    const sizeKb = Math.round(chatFile.size / 1024);
+    $("#sel-chat-status").innerHTML = `<span class="badge-count">✓ Terdeteksi</span> ${esc(chatFile.name)} (${sizeKb} KB)`;
+    try {
+      S.chatTextContent = await chatFile.text();
+    } catch (err) {
+      console.error("Gagal membaca chatFile:", err);
+    }
+  } else {
+    S.chatFileName = null;
+    S.chatTextContent = null;
+    $("#sel-chat-status").innerHTML = `<span class="badge-warn">⚠ Tidak ditemukan</span> File .txt chat WhatsApp tidak ada di folder ini`;
+  }
+
+  $("#sel-media-status").textContent = `${mediaFiles.length} berkas media terdeteksi (${mediaFiles.filter(f => f.type.startsWith("image/")).length} gambar)`;
+
+  // Update CLI command assistant
+  const projName = $("#loader-proj-select").value || (S.projects[0]?.name || "AMG");
+  const folderEscaped = folderName.replace(/["\\]/g, "\\$&");
+  $("#cli-cmd-display").textContent = 
+`python wa_parser.py "${folderEscaped}" --out chat.jsonl
+python wa_loader.py load chat.jsonl --project "${projName}" --media-dir "${folderEscaped}" --drive`;
+}
+
+$("#loader-proj-select").onchange = () => {
+  if (S.selectedFolder) {
+    const projName = $("#loader-proj-select").value;
+    const folderEscaped = S.selectedFolder.replace(/["\\]/g, "\\$&");
+    $("#cli-cmd-display").textContent = 
+`python wa_parser.py "${folderEscaped}" --out chat.jsonl
+python wa_loader.py load chat.jsonl --project "${projName}" --media-dir "${folderEscaped}" --drive`;
+  }
+};
+
+$("#btn-copy-cmd").onclick = () => {
+  navigator.clipboard.writeText($("#cli-cmd-display").textContent).then(() => {
+    const btn = $("#btn-copy-cmd");
+    const orig = btn.textContent;
+    btn.textContent = "✓ Tersalin!";
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+};
+
+// "Mulai Update Chat" button handler
+$("#btn-start-update").onclick = async () => {
+  if (!S.chatFileName || !S.chatTextContent) {
+    alert("Silakan pilih folder atau file teks ekspor chat WhatsApp terlebih dahulu!");
+    return;
+  }
+
+  const logBox = $("#loader-log-box");
+  const container = $("#loader-log-container");
+  const statusBadge = $("#loader-status-badge");
+  container.hidden = false;
+  statusBadge.textContent = "Memproses...";
+  statusBadge.className = "badge-warn";
+
+  logBox.textContent = `[${new Date().toLocaleTimeString("id-ID")}] Mulai memproses berkas: ${S.chatFileName}\n`;
+  logBox.textContent += `[${new Date().toLocaleTimeString("id-ID")}] Ukuran teks chat: ${(S.chatTextContent.length / 1024).toFixed(1)} KB\n`;
+  logBox.textContent += `[${new Date().toLocaleTimeString("id-ID")}] Memeriksa koneksi Supabase & Project: ${$("#loader-proj-select").value}...\n`;
+
+  // Check if serverless API route is available or if direct instructions apply
+  try {
+    const response = await fetch("/api/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project: $("#loader-proj-select").value,
+        filename: S.chatFileName,
+        content: S.chatTextContent.slice(0, 500000) // sample if large
+      })
+    });
+
+    if (response.ok) {
+      const resData = await response.json();
+      logBox.textContent += `[${new Date().toLocaleTimeString("id-ID")}] Berhasil diimpor via API serverless!\n`;
+      logBox.textContent += `[${new Date().toLocaleTimeString("id-ID")}] Pesan baru terupdate: ${resData.new || 0}\n`;
+      statusBadge.textContent = "Selesai";
+      statusBadge.className = "badge-count";
+    } else {
+      throw new Error("Endpoint /api/import belum diaktifkan pada server saat ini.");
+    }
+  } catch (err) {
+    console.info("Catatan API:", err.message);
+    logBox.textContent += `[${new Date().toLocaleTimeString("id-ID")}] Chat siap diimpor. Untuk mengunggah seluruh media berkas ke Google Drive,\n`;
+    logBox.textContent += `  jalankan perintah loader di terminal:\n`;
+    logBox.textContent += `  ${$("#cli-cmd-display").textContent.split("\n").join("\n  ")}\n`;
+    logBox.textContent += `[${new Date().toLocaleTimeString("id-ID")}] Setelah dijalankan di terminal, klik tombol 'Segarkan Riwayat' di bawah.\n`;
+    statusBadge.textContent = "Siap Dijalankan";
+    statusBadge.className = "badge-count";
+  }
+
+  // Auto refresh history after attempting
+  await loadHistory();
+};
+
+// --- LOG HISTORY (FROM SUPABASE 'imports' TABLE) ---
+$("#btn-refresh-history").onclick = () => loadHistory();
+
+async function loadHistory() {
+  const table = $("#history-table");
+  const loading = $("#history-loading");
+  const empty = $("#history-empty");
+  const tbody = $("#history-rows");
+
+  loading.hidden = false;
+  empty.hidden = true;
+  table.hidden = true;
+
+  try {
+    const { data, error } = await sb
+      .from("imports")
+      .select("id, filename, date_order, tz, msg_total, msg_new, first_ts, last_ts, warnings, created_at, group_id, groups(name)")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    loading.hidden = true;
+
+    if (error) {
+      empty.textContent = "Gagal memuat riwayat: " + error.message;
+      empty.hidden = false;
+      return;
+    }
+
+    if (!data || !data.length) {
+      empty.hidden = false;
+      return;
+    }
+
+    tbody.innerHTML = data.map(item => {
+      const groupName = item.groups?.name || "(Grup ID: " + (item.group_id?.slice(0, 8) || "-") + ")";
+      const createdAt = item.created_at ? dfShort.format(new Date(item.created_at)) : "-";
+      const range = (item.first_ts && item.last_ts)
+        ? `${dfShort.format(new Date(item.first_ts))} – ${dfShort.format(new Date(item.last_ts))}`
+        : "Belum tercatat";
+      
+      const updateBadge = item.msg_new > 0
+        ? `<span class="badge-count">+${item.msg_new} terupdate</span>`
+        : `<span style="color:var(--mu);font-size:12px;">+0 (tidak ada baru)</span>`;
+
+      const warningsList = Array.isArray(item.warnings) ? item.warnings : [];
+      const statusBadge = warningsList.length > 0
+        ? `<span class="badge-warn" title="${esc(warningsList.join('; '))}">⚠ ${warningsList.length} peringatan</span>`
+        : `<span class="badge-count">✓ Sukses</span>`;
+
+      return `<tr>
+        <td style="white-space:nowrap;font-weight:500;">${esc(createdAt)}</td>
+        <td><strong>${esc(groupName)}</strong></td>
+        <td><code>${esc(item.filename || "chat export")}</code></td>
+        <td>${updateBadge}</td>
+        <td>${Number(item.msg_total || 0).toLocaleString("id-ID")} pesan</td>
+        <td style="font-size:12px;color:var(--mu);">${esc(range)}</td>
+        <td>${statusBadge}</td>
+      </tr>`;
+    }).join("");
+
+    table.hidden = false;
+  } catch (err) {
+    loading.hidden = true;
+    empty.textContent = "Error: " + err.message;
+    empty.hidden = false;
+    console.error("Gagal membaca history imports:", err);
+  }
+}
+</script>
+</body>
+</html>
