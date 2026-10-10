@@ -8,6 +8,7 @@ google_token.json
 
 # Chat data & exports (sensitive personal/business chats)
 data/
+inbox/
 *.jsonl
 *.zip
 *.txt

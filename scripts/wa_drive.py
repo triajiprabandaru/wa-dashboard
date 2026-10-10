@@ -6,8 +6,8 @@ Persiapan:
     pip install google-api-python-client google-auth-oauthlib pillow
     simpan file OAuth client dari Google Cloud sebagai google_client.json
 
-Otorisasi sekali (membuka browser):
-    python wa_drive.py auth
+Otorisasi sekali (membuka browser, jalankan dari root proyek):
+    python scripts/wa_drive.py auth
 
 drive.file hanya memberi akses ke file/folder yang DIBUAT aplikasi ini, jadi struktur
 "WA Dashboard / <Project> / <Grup>" dibuat oleh kode, bukan manual.
@@ -60,7 +60,7 @@ class Drive:
 
         _, token_file = _paths()
         if not Path(token_file).exists():
-            sys.exit("Belum ada token Google. Jalankan dulu: python wa_drive.py auth")
+            sys.exit("Belum ada token Google. Jalankan dulu: python scripts/wa_drive.py auth")
         creds = Credentials.from_authorized_user_file(token_file, SCOPES)
         if not creds.valid:
             try:
@@ -69,7 +69,7 @@ class Drive:
                 sys.exit(
                     "Token Google kedaluwarsa atau dicabut (umumnya karena aplikasi masih berstatus Testing, "
                     "yang membatasi token 7 hari). Pastikan status 'In production', lalu jalankan ulang: "
-                    f"python wa_drive.py auth\n(detail: {e})"
+                    f"python scripts/wa_drive.py auth\n(detail: {e})"
                 )
             Path(token_file).write_text(creds.to_json(), encoding="utf-8")
         return build("drive", "v3", credentials=creds, cache_discovery=False)
@@ -114,9 +114,21 @@ class Drive:
         ).execute()
 
 
+_drive: "Drive | None" = None
+
+
+def get_drive() -> "Drive":
+    """Satu instance Drive dipakai bersama: layanan API dibangun sekali dan cache folder tetap hidup,
+    sehingga unggah ribuan file tidak mencari/membuat folder ulang tiap kali."""
+    global _drive
+    if _drive is None:
+        _drive = Drive()
+    return _drive
+
+
 def upload_to_drive(local_path, filename: str, group_name: str, project_name: str = "Default") -> tuple[str, str]:
     """Upload satu file ke 'WA Dashboard/<project>/<grup>' di Drive, kembalikan (file_id, view_url)."""
-    drive = Drive()
+    drive = get_drive()
     folder_id = drive.ensure_path(["WA Dashboard", project_name, group_name])
     file_id, view_url = drive.upload(local_path, filename, folder_id)
     drive.share_public(file_id)

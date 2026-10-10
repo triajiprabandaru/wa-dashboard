@@ -5,13 +5,15 @@ wa_loader.py - muat hasil wa_parser.py (JSONL) ke Supabase Postgres; unggah medi
 Persiapan (sekali):
     pip install "psycopg[binary]"
     salin .env.example menjadi .env lalu isi nilainya
-    python wa_drive.py auth   ← otorisasi Google Drive (sekali, membuka browser)
+    python scripts/wa_drive.py auth   ← otorisasi Google Drive (sekali, membuka browser)
+
+Semua perintah dijalankan dari root proyek. Untuk memproses banyak ekspor sekaligus, lihat wa_sync.py.
 
 Perintah:
-    python wa_loader.py bootstrap  --workspace "Workspace Saya" --owner-email anda@email.com
-    python wa_loader.py add-member --email teman@email.com --role editor --project "AMG"
-    python wa_loader.py load chat.jsonl --project "AMG" --dry-run
-    python wa_loader.py load chat.jsonl --project "AMG" --media-dir "C:\\...\\folder export" --drive
+    python scripts/wa_loader.py bootstrap  --workspace "Workspace Saya" --owner-email anda@email.com
+    python scripts/wa_loader.py add-member --email teman@email.com --role editor --project "AMG"
+    python scripts/wa_loader.py load data/chat.jsonl --project "AMG" --dry-run
+    python scripts/wa_loader.py load data/chat.jsonl --project "AMG" --media-dir "C:\\...\\folder export" --drive
 
 Aman dijalankan berulang: pesan yang sudah ada dilewati (berdasarkan msg_hash).
 """
@@ -101,7 +103,7 @@ def get_workspace(cur, name: str | None = None):
         cur.execute("select id from workspaces order by created_at limit 1")
     row = cur.fetchone()
     if not row:
-        sys.exit('Workspace belum ada. Jalankan: python wa_loader.py bootstrap --workspace "Nama" --owner-email email')
+        sys.exit('Workspace belum ada. Jalankan: python scripts/wa_loader.py bootstrap --workspace "Nama" --owner-email email')
     return row[0]
 
 
@@ -270,7 +272,22 @@ def run_load(cur, ws_id, header, messages, project_name=None, source_name=None):
 # Unggah media ke Google Drive
 # --------------------------------------------------------------------------- #
 
-def upload_pending(cur, group_id, group_name: str, project_name: str | None, media_dir: Path, max_mb: float):
+def file_sha256(path: Path, chunk: int = 1024 * 1024) -> str:
+    """sha256 dibaca per potongan agar file besar (hingga GB) tidak dimuat penuh ke RAM."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while block := f.read(chunk):
+            h.update(block)
+    return h.hexdigest()
+
+
+def upload_pending(cur, group_id, group_name: str, project_name: str | None, media_dir: Path, max_mb: float,
+                   commit=None):
+    """Unggah lampiran yang belum punya storage_path.
+
+    commit: fungsi tanpa argumen (mis. conn.commit) yang dipanggil setelah SETIAP file tercatat di DB.
+    Dengan begitu, kalau proses terputus, file yang sudah terunggah tidak diunggah ulang pada percobaan berikutnya.
+    """
     from wa_drive import upload_to_drive
 
     cur.execute(
@@ -290,7 +307,7 @@ def upload_pending(cur, group_id, group_name: str, project_name: str | None, med
             stats["too_big"] += 1
             print(f"  dilewati (>{max_mb:g} MB): {filename}")
             continue
-        sha = hashlib.sha256(path.read_bytes()).hexdigest()
+        sha = file_sha256(path)
         cur.execute("select storage_path from attachments where sha256 = %s and storage_path is not null limit 1", (sha,))
         row = cur.fetchone()
         if row:
@@ -308,6 +325,8 @@ def upload_pending(cur, group_id, group_name: str, project_name: str | None, med
             (file_id, size, sha, att_id),
         )
         stats["reused" if reused else "uploaded"] += 1
+        if commit:
+            commit()
     return stats
 
 
@@ -337,7 +356,7 @@ def cmd_load(args):
             with conn.cursor() as cur:
                 up = upload_pending(
                     cur, stats["group_id"], stats["group_name"],
-                    args.project, Path(args.media_dir), args.max_mb,
+                    args.project, Path(args.media_dir), args.max_mb, commit=conn.commit,
                 )
             conn.commit()
             print("Media           : " + ", ".join(f"{k}={v}" for k, v in up.items()))
@@ -364,7 +383,7 @@ def main(argv=None):
     l.add_argument("jsonl")
     l.add_argument("--project", help="nama project; dibuat jika belum ada, grup ditautkan ke sana")
     l.add_argument("--media-dir", help="folder export yang berisi file media")
-    l.add_argument("--drive", action="store_true", help="unggah media ke Google Drive (jalankan 'python wa_drive.py auth' dulu)")
+    l.add_argument("--drive", action="store_true", help="unggah media ke Google Drive (jalankan 'python scripts/wa_drive.py auth' dulu)")
     l.add_argument("--max-mb", type=float, default=5120, help="lewati file lebih besar dari ini dalam MB (default 5120 = 5 GB)")
     l.add_argument("--dry-run", action="store_true", help="jalankan semuanya lalu batalkan (rollback)")
     l.set_defaults(fn=cmd_load)
