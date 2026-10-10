@@ -2,14 +2,17 @@
 .env
 .env.local
 .env.*.local
+!.env.example
 google_client.json
 google_token.json
 
 # Chat data & exports (sensitive personal/business chats)
+data/
+inbox/
 *.jsonl
 *.zip
 *.txt
-!requirements-cli.txt
+!requirements.txt
 
 # Python cache & virtualenvs
 __pycache__/

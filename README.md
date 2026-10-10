@@ -31,29 +31,77 @@ Aplikasi web memiliki **Main Headbar** dengan 3 tab navigasi:
 ## 📁 Struktur Direktori
 
 ```text
-├── 001_init.sql              # Skema database Supabase & aturan RLS
-├── 002_seq_and_bucket.sql    # Skema sekuens & bucket
-├── 003_storage_policy.sql    # Kebijakan storage Supabase
-├── config.js                 # Konfigurasi Supabase untuk web client
-├── config.example.js         # Template konfigurasi web
-├── env.example               # Contoh environment variable untuk CLI loader
-├── index.html                # Aplikasi web (Dashboard, Explorer, Loader)
-├── requirements-cli.txt      # Dependensi Python untuk loader & parser terminal
-├── vercel.json               # Konfigurasi deployment Vercel
-├── wa_parser.py              # Parser chat WhatsApp (Android/iOS, multi-format)
-├── wa_loader.py              # Loader data ke database Supabase & Google Drive
-├── wa_drive.py               # Integrasi otentikasi & upload Google Drive API
-├── test_wa_parser.py         # Unit test untuk parser
-└── test_wa_loader.py         # Unit test untuk loader
+├── web/                          # Aplikasi web statis (yang di-deploy ke Vercel)
+│   ├── index.html                # Dashboard, Explorer, Loader
+│   ├── config.js                 # Konfigurasi Supabase untuk web client (URL + kunci publishable)
+│   └── config.example.js         # Template konfigurasi web
+├── scripts/                      # CLI Python (dijalankan dari root proyek)
+│   ├── wa_parser.py              # Parser chat WhatsApp (Android/iOS, multi-format)
+│   ├── wa_loader.py              # Loader data ke database Supabase & Google Drive
+│   ├── wa_sync.py                # Impor semua ekspor di folder inbox sekaligus (parse + load + Drive + arsip)
+│   └── wa_drive.py               # Otentikasi & upload Google Drive API
+├── supabase/
+│   └── migrations/               # Jalankan berurutan di SQL Editor Supabase
+│       ├── 001_init.sql          # Skema database & aturan RLS
+│       ├── 002_seq_and_bucket.sql
+│       └── 003_storage_policy.sql
+├── tests/                        # Unit test (unittest)
+│   ├── test_wa_parser.py
+│   ├── test_wa_loader.py
+│   └── test_wa_sync.py
+├── data/                         # Hasil parse lokal (chat.jsonl) - tidak masuk git
+├── inbox/                        # Tempat menaruh ekspor WhatsApp untuk wa_sync.py - tidak masuk git
+├── .env.example                  # Contoh environment variable untuk CLI loader
+├── requirements.txt              # Dependensi Python untuk parser & loader
+└── vercel.json                   # Konfigurasi deployment (outputDirectory: web)
 ```
+
+---
+
+## 🛠️ Menjalankan CLI & Tes
+
+Semua perintah dijalankan dari **root proyek** (bukan dari dalam `scripts/`), karena `.env`, `google_client.json`, dan `google_token.json` dibaca dari folder kerja.
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env            # lalu isi kredensial
+
+python scripts/wa_parser.py "<folder-ekspor>" --out data/chat.jsonl
+python scripts/wa_loader.py load data/chat.jsonl --project "<NAMA-PROYEK>" --media-dir "<folder-ekspor>" --drive
+
+python -m unittest discover -s tests
+```
+
+### Sinkronisasi otomatis dengan `wa_sync.py` (disarankan)
+
+Taruh setiap ekspor di `inbox/<Nama Project>/` (folder ekspor atau file `.zip`), lalu jalankan satu perintah. Tidak perlu menjalankan parser dan loader satu per satu.
+
+```text
+inbox/
+  AMG/
+    WhatsApp Chat with PROJECT TEAM/        (atau .zip)
+    WhatsApp Chat with Rizma House Depok.zip
+  _done/                                    (ekspor yang sudah selesai dipindah ke sini)
+```
+
+```bash
+python scripts/wa_sync.py --dry-run     # uji coba, tidak ada yang berubah
+python scripts/wa_sync.py               # sinkronisasi sungguhan
+python scripts/wa_sync.py --no-drive    # hanya database
+```
+
+- Ekspor yang gagal tetap di inbox dan dicoba lagi pada sinkronisasi berikutnya; impor berulang aman.
+- Urutan tanggal yang ambigu tidak ditebak: ekspor dilewati sampai kamu menambahkan `--date-order MDY` atau `DMY`.
+- Kode keluar 0 bila semua berhasil, 1 bila ada yang gagal atau perlu perhatian. Lokasi inbox bisa diubah lewat `--inbox` atau `WA_INBOX_DIR` di `.env`.
+- Untuk dijalankan tiap malam, buat tugas di Windows Task Scheduler yang menjalankan `python scripts/wa_sync.py` dengan *Start in* diisi root proyek.
 
 ---
 
 ## 💻 Menjalankan di Lokal (Port 8000)
 
-1. Jalankan server lokal di folder ini:
+1. Jalankan server lokal dari root proyek:
    ```bash
-   python -m http.server 8000
+   python -m http.server 8000 --directory web
    ```
 2. Buka browser di [http://localhost:8000](http://localhost:8000).
 3. Masuk dengan email yang sudah diundang pada Supabase Auth Anda.
@@ -93,7 +141,7 @@ Ikuti langkah-langkah berikut di terminal untuk mengunggah ke GitHub:
 
 1. Buka [Vercel Dashboard](https://vercel.com/dashboard) dan klik **Add New...** > **Project**.
 2. Pilih repositori GitHub Anda (`wa-dashboard`).
-3. Pada bagian **Framework Preset**, biarkan **Other**.
+3. Pada bagian **Framework Preset**, biarkan **Other**. Folder output (`web`) sudah diatur di `vercel.json`.
 4. Klik tombol **Deploy**.
 5. Tunggu proses deployment selesai hingga Anda mendapatkan domain (misalnya: `https://wa-dashboard-xyz.vercel.app`).
 

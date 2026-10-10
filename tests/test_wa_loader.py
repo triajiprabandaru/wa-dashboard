@@ -1,11 +1,15 @@
+import sys
 import tempfile
 import unittest
 import uuid
 from pathlib import Path
 
-import wa_loader
-from test_wa_parser import SAMPLE
-from wa_parser import message_to_dict, parse_chat_text
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import wa_loader  # noqa: E402
+from test_wa_parser import SAMPLE  # noqa: E402
+from wa_parser import message_to_dict, parse_chat_text  # noqa: E402
 
 
 def build_jsonl_rows(text=SAMPLE):
@@ -167,6 +171,61 @@ class UploadTests(unittest.TestCase):
         self.calls.clear()
         st2 = wa_loader.upload_pending(cur2, gid, "Test Group", "Test Project", self.dir, max_mb=1)
         self.assertEqual((st2["reused"], st2["uploaded"], len(self.calls)), (1, 0, 0))
+
+
+class UploadHardeningTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        import wa_drive
+        self._orig = wa_drive.upload_to_drive
+        self.uploaded = []
+
+        def _mock_upload(path, filename, group_name, project_name="Default"):
+            self.uploaded.append(filename)
+            return (f"id_{filename}", "https://view.url")
+        wa_drive.upload_to_drive = _mock_upload
+
+    def tearDown(self):
+        import wa_drive
+        wa_drive.upload_to_drive = self._orig
+        self.tmp.cleanup()
+
+    def test_file_sha256_reads_in_chunks_and_matches_hashlib(self):
+        import hashlib
+        data = bytes(range(256)) * 50
+        p = self.dir / "x.bin"
+        p.write_bytes(data)
+        self.assertEqual(wa_loader.file_sha256(p, chunk=7), hashlib.sha256(data).hexdigest())
+        self.assertEqual(wa_loader.file_sha256(p), hashlib.sha256(data).hexdigest())
+
+    def test_commit_called_after_every_file(self):
+        (self.dir / "a.jpg").write_bytes(b"AAA")
+        (self.dir / "b.jpg").write_bytes(b"BBB")
+        pend = [(uuid.uuid4(), "a.jpg"), (uuid.uuid4(), "hilang.pdf"), (uuid.uuid4(), "b.jpg")]
+        commits = []
+        cur = FakeCursor(pending_attachments=pend)
+        st = wa_loader.upload_pending(cur, uuid.uuid4(), "G", "P", self.dir, max_mb=1,
+                                      commit=lambda: commits.append(1))
+        self.assertEqual((st["uploaded"], st["missing"]), (2, 1))
+        self.assertEqual(len(commits), 2)  # satu per file yang tercatat; file hilang tidak memicu commit
+
+    def test_failed_upload_does_not_commit_and_continues(self):
+        import wa_drive
+        (self.dir / "a.jpg").write_bytes(b"AAA")
+        (self.dir / "b.jpg").write_bytes(b"BBB")
+
+        def flaky(path, filename, group_name, project_name="Default"):
+            if filename == "a.jpg":
+                raise OSError("jaringan putus")
+            return ("id_b", "https://view.url")
+        wa_drive.upload_to_drive = flaky
+
+        commits = []
+        pend = [(uuid.uuid4(), "a.jpg"), (uuid.uuid4(), "b.jpg")]
+        st = wa_loader.upload_pending(FakeCursor(pending_attachments=pend), uuid.uuid4(), "G", "P",
+                                      self.dir, max_mb=1, commit=lambda: commits.append(1))
+        self.assertEqual((st["failed"], st["uploaded"], len(commits)), (1, 1, 1))
 
 
 class EnvTests(unittest.TestCase):
