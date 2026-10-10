@@ -395,8 +395,8 @@ pre.cmd-box {
         <p style="margin:6px 0 8px 0;font-size:12px;color:var(--mu);">
           Upload media bergiga-byte langsung diproses dengan cepat & aman tanpa batas limit browser melalui perintah Python berikut:
         </p>
-        <pre class="cmd-box" id="cli-cmd-display" style="margin:0;">python wa_parser.py "WhatsApp Chat dengan PROYEK" --out chat.jsonl
-python wa_loader.py load chat.jsonl --project "AMG" --media-dir "WhatsApp Chat dengan PROYEK" --drive</pre>
+        <pre class="cmd-box" id="cli-cmd-display" style="margin:0;">python scripts/wa_parser.py "WhatsApp Chat dengan PROYEK" --out data/chat.jsonl
+python scripts/wa_loader.py load data/chat.jsonl --project "AMG" --media-dir "WhatsApp Chat dengan PROYEK" --drive</pre>
       </div>
     </div>
 
@@ -769,8 +769,8 @@ async function handleSelectedFiles(files) {
   const projName = $("#loader-proj-select").value || (S.projects[0]?.name || "AMG");
   const folderEscaped = folderName.replace(/["\\]/g, "\\$&");
   $("#cli-cmd-display").textContent = 
-`python wa_parser.py "${folderEscaped}" --out chat.jsonl
-python wa_loader.py load chat.jsonl --project "${projName}" --media-dir "${folderEscaped}" --drive`;
+`python scripts/wa_parser.py "${folderEscaped}" --out data/chat.jsonl
+python scripts/wa_loader.py load data/chat.jsonl --project "${projName}" --media-dir "${folderEscaped}" --drive`;
 }
 
 $("#loader-proj-select").onchange = () => {
@@ -778,8 +778,8 @@ $("#loader-proj-select").onchange = () => {
     const projName = $("#loader-proj-select").value;
     const folderEscaped = S.selectedFolder.replace(/["\\]/g, "\\$&");
     $("#cli-cmd-display").textContent = 
-`python wa_parser.py "${folderEscaped}" --out chat.jsonl
-python wa_loader.py load chat.jsonl --project "${projName}" --media-dir "${folderEscaped}" --drive`;
+`python scripts/wa_parser.py "${folderEscaped}" --out data/chat.jsonl
+python scripts/wa_loader.py load data/chat.jsonl --project "${projName}" --media-dir "${folderEscaped}" --drive`;
   }
 };
 

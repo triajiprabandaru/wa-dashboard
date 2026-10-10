@@ -1,6 +1,10 @@
+import sys
 import unittest
+from pathlib import Path
 
-from wa_parser import detect_date_order, message_hash, parse_chat_text
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+
+from wa_parser import detect_date_order, message_hash, parse_chat_text  # noqa: E402
 
 SAMPLE = """\ufeff6/10/26, 12:49 PM - Messages and calls are end-to-end encrypted. Only people in this chat can read, listen to, or share them. *Learn more*
 6/10/26, 12:49 PM - TANTI KUSAENI AMG created group "PROJECT TEAM"

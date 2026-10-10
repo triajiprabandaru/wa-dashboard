@@ -1,11 +1,15 @@
+import sys
 import tempfile
 import unittest
 import uuid
 from pathlib import Path
 
-import wa_loader
-from test_wa_parser import SAMPLE
-from wa_parser import message_to_dict, parse_chat_text
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import wa_loader  # noqa: E402
+from test_wa_parser import SAMPLE  # noqa: E402
+from wa_parser import message_to_dict, parse_chat_text  # noqa: E402
 
 
 def build_jsonl_rows(text=SAMPLE):
